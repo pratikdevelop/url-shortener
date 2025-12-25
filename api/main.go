@@ -2,349 +2,154 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"api/helpers"
-	"api/models"
-
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var client *mongo.Client
+var dbClient *mongo.Client
 
-func GetClient() *mongo.Client {
-	return client
-}
-
-const (
-	defaultPort = ":8081"
-)
-
-// MongoDB Variables
-var (
-	Client        *mongo.Client
-	URLCollection *mongo.Collection
-)
-
-// URL Struct
 type URL struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	ShortCode     string             `bson:"short_code" json:"short_code"`
-	LongURL       string             `bson:"long_url" json:"long_url"`
-	CreatedAt     time.Time          `bson:"created_at" json:"created_at"`
-	Clicks        int64              `bson:"clicks" json:"clicks"`
-	LastClickedAt time.Time          `bson:"last_clicked_at" json:"last_clicked_at"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Name        string             `bson:"name" json:"name"`
+	OriginalURL string             `bson:"originalUrl" json:"originalUrl"`
+	ShortCode   string             `bson:"shortCode" json:"shortCode"`
 }
 
-// ErrorResponse struct
-type ErrorResponse struct {
-	Error string `json:"error"`
+type POSTURL struct {
+	Name        string `bson:"name" json:"name"`
+	OriginalURL string `bson:"originalUrl" json:"originalUrl"`
+	ShortCode   string `bson:"shortCode" json:"shortCode"`
 }
 
-// SuccessResponse struct
-type SuccessResponse struct {
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
-}
-
-// Get environment variable or default
-func getEnvOrDefault(key, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+func initDB() {
+	if dbClient != nil {
+		return
 	}
-	return defaultValue
-}
 
-// GenerateShortCode
-func generateShortCode(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	if _, err := rand.Read(b); err != nil {
-		return ""
+	uri := os.Getenv("MONGODB_URI")
+	if uri == "" {
+		log.Fatal("You must set MONGODB_URI environment variable")
 	}
-	for i := range b {
-		b[i] = charset[int(b[i])%len(charset)]
-	}
-	return string(b)
-}
 
-func SetupDatabase() (*mongo.Client, error) {
-	mongoURI := getEnvOrDefault("MONGO_URI", "")
+	clientOptions := options.Client().ApplyURI(uri)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	clientOptions := options.Client().ApplyURI(mongoURI)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to MongoDB: %v", err)
+		log.Fatal("Failed to connect to MongoDB:", err)
 	}
 
-	if err = client.Ping(ctx, readpref.Primary()); err != nil {
-		return nil, fmt.Errorf("failed to ping MongoDB: %v", err)
+	// Test the connection
+	if err := client.Ping(ctx, nil); err != nil {
+		log.Fatal("Failed to ping MongoDB:", err)
 	}
 
-	return client, nil
+	dbClient = client
+	fmt.Println("Connected to MongoDB Atlas!")
 }
 
-// Handle Shorten URL
-func handleShortenURL(c *gin.Context) {
-	var request struct {
-		LongURL   string  `json:"long_url" binding:"required,url"`
-		ShortCode *string `json:"short_code"`
-	}
+func getAllUrls(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Printf("Error binding JSON in handleShortenURL: %v", err)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-		return
-	}
+	initDB() // Ensure DB is connected
 
-	collection := GetClient().Database("goapp").Collection("urls")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var shortCode string
-	if request.ShortCode != nil && *request.ShortCode != "" {
-		// Check if custom short code already exists
-		filter := bson.M{"short_code": *request.ShortCode}
-		count, err := collection.CountDocuments(ctx, filter)
-		if err != nil {
-			log.Printf("Error checking custom short code existence: %v", err)
-			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to check custom short code"})
-			return
-		}
-		if count > 0 {
-			c.JSON(http.StatusConflict, ErrorResponse{Error: "Custom short code already in use"})
-			return
-		}
-		shortCode = *request.ShortCode
-	} else {
-		// Generate a unique short code
-		for {
-			shortCode, err := helpers.GenerateShortCode(6)
-			if err != nil {
-				log.Printf("Error generating short code: %v", err)
-				c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate short code"})
-				return
-			}
-			filter := bson.M{"short_code": shortCode}
-			count, err := collection.CountDocuments(ctx, filter)
-			if err != nil {
-				log.Printf("Error checking short code existence: %v", err)
-				c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate short code"})
-				return
-			}
-			if count == 0 {
-				break
-			}
-		}
-	}
-
-	// Create a new URL document
-	newURL := models.URL{
-		ID:        primitive.NewObjectID(),
-		LongURL:   request.LongURL,
-		ShortCode: shortCode,
-		ShortURL:  fmt.Sprintf("http://localhost:8081/%s", shortCode),
-		Clicks:    0,
-		CreatedAt: time.Now(),
-	}
-
-	// Insert the new URL into the database
-	_, err := collection.InsertOne(ctx, newURL)
-	if err != nil {
-		log.Printf("Error inserting URL: %v", err)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to shorten URL"})
-		return
-	}
-
-	c.JSON(http.StatusOK, SuccessResponse{Data: gin.H{"short_url": newURL.ShortURL}})
-}
-
-// Handle Redirect
-func handleRedirect(c *gin.Context) {
-	shortCode := c.Param("shortCode")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	var url URL
-	err := URLCollection.FindOne(ctx, bson.M{"short_code": shortCode}).Decode(&url)
-	if err != nil {
-		log.Printf("Short URL %s not found: %v", shortCode, err)
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Short URL not found"})
-		return
-	}
-
-	// Update click count and last clicked at
-	_, err = URLCollection.UpdateOne(
-		ctx,
-		bson.M{"_id": url.ID},
-		bson.M{"$inc": bson.M{"clicks": 1}, "$set": bson.M{"last_clicked_at": time.Now()}},
-	)
-	if err != nil {
-		log.Printf("Failed to update click count for %s: %v", shortCode, err)
-	}
-
-	c.Redirect(http.StatusMovedPermanently, url.LongURL)
-}
-
-// Handle Get Stats
-func handleGetStats(c *gin.Context) {
-	shortCode := c.Param("shortCode")
+	collection := dbClient.Database("url-shortner").Collection("lists")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var url URL
-	err := URLCollection.FindOne(ctx, bson.M{"short_code": shortCode}).Decode(&url)
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		log.Printf("Short URL %s for stats not found: %v", shortCode, err)
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Short URL not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, SuccessResponse{
-		Message: "URL statistics retrieved successfully",
-		Data: gin.H{
-			"long_url":        url.LongURL,
-			"short_code":      url.ShortCode,
-			"clicks":          url.Clicks,
-			"created_at":      url.CreatedAt,
-			"last_clicked_at": url.LastClickedAt,
-		},
-	})
-}
-
-// handleListURLs retrieves all shortened URLs from the database
-func handleListURLs(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	var urls []URL
-	cursor, err := URLCollection.Find(ctx, bson.M{})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URLs"})
+		http.Error(w, "Failed to query database: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(ctx)
 
-	if err = cursor.All(ctx, &urls); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode URLs"})
+	var results []URL
+	if err := cursor.All(ctx, &results); err != nil {
+		http.Error(w, "Failed to decode results: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, urls)
+	json.NewEncoder(w).Encode(results)
 }
 
-// handleDeleteURL deletes a shortened URL from the database
-func handleDeleteURL(c *gin.Context) {
-	shortCode := c.Param("shortCode")
+func addShortUrls(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var user POSTURL
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	filter := bson.M{"short_code": shortCode}
-	result := URLCollection.FindOneAndDelete(ctx, filter)
-
-	if result.Err() != nil {
-		fmt.Printf("Error deleting URL: %v", result.Err())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete URL"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "URL deleted successfully"})
-}
-
-// handleEditURL updates an existing shortened URL in the database
-func handleEditURL(c *gin.Context) {
-	shortCode := c.Param("shortCode")
-
-	var requestBody struct {
-		LongURL string `json:"long_url"`
-	}
-
-	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if requestBody.LongURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Long URL cannot be empty"})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	filter := bson.M{"short_code": shortCode}
-	update := bson.M{"$set": bson.M{"long_url": requestBody.LongURL}}
-
-	result, err := URLCollection.UpdateOne(ctx, filter, update)
+	// Decode JSON body
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update URL"})
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	initDB() // Ensure DB is connected
 
-	if result.ModifiedCount == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Short URL not found or no changes made"})
+	collection := dbClient.Database("url-shortner").Collection("lists")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cursor, err := collection.InsertOne(ctx, user)
+
+	if err != nil {
+		http.Error(w, "Failed to query database: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	fmt.Println(cursor)
 
-	c.JSON(http.StatusOK, gin.H{"message": "URL updated successfully"})
+	fmt.Println("Received user:", user)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "User created successfully",
+	})
 }
 
+func init() {
+	err := godotenv.Load() // Loads the .env file from the current directory
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	fmt.Println("MONGODB_URI:", os.Getenv("MONGODB_URI")) // Output: Tho
+}
 func main() {
-	var err error
-	Client, err = SetupDatabase()
-	if err != nil {
-		log.Fatalf("Database connection failed: %v", err)
-	}
+
+	// Ensure DB connection on startup
+	initDB()
+
+	// Optional: Graceful shutdown
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := Client.Disconnect(ctx); err != nil {
-			log.Printf("Error disconnecting from MongoDB: %v", err)
+		if dbClient != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := dbClient.Disconnect(ctx); err != nil {
+				log.Println("Error disconnecting from MongoDB:", err)
+			}
 		}
 	}()
 
-	URLCollection = Client.Database("goapp").Collection("urls")
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "URL Shortener API is running!")
+	})
 
-	// Initialize Gin router
-	r := gin.Default()
+	http.HandleFunc("/urls", getAllUrls)
+	http.HandleFunc("/addUrl", addShortUrls)
 
-	// CORS configuration
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "https://your-production-domain.com", "http://localhost:3000"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
-
-	// Public routes
-	r.POST("/shorten", handleShortenURL)
-	r.GET("/:shortCode", handleRedirect)
-	r.GET("/:shortCode/stats", handleGetStats)
-	r.GET("/urls", handleListURLs)
-	r.DELETE("/urls/:shortCode", handleDeleteURL)
-	r.PUT("/urls/:shortCode", handleEditURL)
-
-	port := getEnvOrDefault("PORT", defaultPort)
-	if err := r.Run(port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
-	fmt.Printf("Server running on port %s\n", port)
+	fmt.Println("Server running on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
