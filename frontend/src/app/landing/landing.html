@@ -1,0 +1,172 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+  <!-- Navigation -->
+  <mat-toolbar class="bg-white/80 backdrop-blur-sm shadow-sm">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <mat-icon class="text-indigo-600">link</mat-icon>
+        <span class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          Short.ly
+        </span>
+      </div>
+      
+      <div class="flex items-center space-x-4">
+        <button mat-button routerLink="/login" class="text-gray-600 hover:text-indigo-600">
+          Login
+        </button>
+        <button mat-raised-button 
+                color="primary" 
+                routerLink="/signup"
+                class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+          Get Started
+        </button>
+      </div>
+    </div>
+  </mat-toolbar>
+
+  <!-- Hero Section -->
+  <div class="container mx-auto px-4 py-12 md:py-20">
+    <div class="text-center max-w-4xl mx-auto">
+      <h1 class="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+        Shorten Your <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Links</span>,
+        <br>Amplify Your <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Reach</span>
+      </h1>
+      <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+        Create short, memorable URLs in seconds. Track clicks, analyze performance, and optimize your links with our powerful platform.
+      </p>
+      
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button mat-raised-button 
+                color="primary" 
+                routerLink="/signup"
+                class="px-8 py-3 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+          Get Started        </button>
+        <button mat-stroked-button 
+                routerLink="/login"
+                class="px-8 py-3 text-lg border-indigo-600 text-indigo-600 hover:bg-indigo-50">
+          Sign In
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Features -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mt-20">
+      <!-- Feature 1 -->
+      <mat-card class="text-center p-8 hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+        <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <mat-icon class="text-indigo-600 text-4xl">speed</mat-icon>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">Lightning Fast</h3>
+        <p class="text-gray-600">
+          Create shortened URLs instantly with our high-performance infrastructure.
+        </p>
+      </mat-card>
+
+      <!-- Feature 2 -->
+      <mat-card class="text-center p-8 hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <mat-icon class="text-green-600 text-4xl">analytics</mat-icon>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">Detailed Analytics</h3>
+        <p class="text-gray-600">
+          Track clicks, locations, devices, and referral sources in real-time.
+        </p>
+      </mat-card>
+
+      <!-- Feature 3 -->
+      <mat-card class="text-center p-8 hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+        <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <mat-icon class="text-purple-600 text-4xl">security</mat-icon>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">Secure & Reliable</h3>
+        <p class="text-gray-600">
+          Enterprise-grade security with 99.9% uptime guarantee.
+        </p>
+      </mat-card>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mt-20">
+      <div class="text-center">
+        <div class="text-5xl font-bold text-indigo-600 mb-2">1M+</div>
+        <div class="text-gray-600 text-lg">Links Shortened</div>
+      </div>
+      <div class="text-center">
+        <div class="text-5xl font-bold text-green-600 mb-2">50M+</div>
+        <div class="text-gray-600 text-lg">Total Clicks</div>
+      </div>
+      <div class="text-center">
+        <div class="text-5xl font-bold text-purple-600 mb-2">10K+</div>
+        <div class="text-gray-600 text-lg">Happy Users</div>
+      </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="mt-24 text-center">
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-12">
+        <h2 class="text-3xl font-bold text-white mb-6">
+          Ready to get started?
+        </h2>
+        <p class="text-indigo-100 text-xl mb-8 max-w-2xl mx-auto">
+          Join thousands of users who trust Short.ly for their URL shortening needs.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button mat-raised-button 
+                  routerLink="/signup"
+                  class="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-3 text-lg">
+            Get Started          </button>
+          <button mat-stroked-button 
+                  routerLink="/login"
+                  class="border-white text-white hover:bg-white/10 px-8 py-3 text-lg">
+            Sign In
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white mt-20">
+    <div class="container mx-auto px-4 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div>
+          <div class="flex items-center space-x-2 mb-4">
+            <mat-icon class="text-indigo-400">link</mat-icon>
+            <span class="text-2xl font-bold">Short.ly</span>
+          </div>
+          <p class="text-gray-400">
+            Professional URL shortening and analytics platform.
+          </p>
+        </div>
+        
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Product</h4>
+          <ul class="space-y-2 text-gray-400">
+            <li><a routerLink="/login" class="hover:text-white">Features</a></li>
+            <li><a routerLink="/signup" class="hover:text-white">Pricing</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Company</h4>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="#" class="hover:text-white">About</a></li>
+            <li><a href="#" class="hover:text-white">Blog</a></li>
+            <li><a href="#" class="hover:text-white">Contact</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Legal</h4>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+            <li><a href="#" class="hover:text-white">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+        <p>© 2024 Short.ly. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</div>

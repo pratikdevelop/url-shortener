@@ -1,0 +1,162 @@
+<main class="min-h-screen bg-gray-50 py-8 px-4">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-bold text-gray-900 mb-2">
+        {{ title() }}
+      </h1>
+    </div>
+
+    <!-- Toolbar: Add URL + Logout -->
+    <mat-toolbar color="primary" class="mb-6 rounded-lg shadow-md flex items-center justify-between">
+      <!-- Left spacer -->
+      <span class="flex-1"></span>
+
+      <!-- Center: Add URL Button -->
+      <button mat-flat-button color="accent" (click)="openAddUrlDialog()">
+        <mat-icon>add</mat-icon>
+        <span class="ml-2">Add URL</span>
+      </button>
+
+      <!-- Right: Logout Button -->
+      <button
+        mat-icon-button
+        color="warn"
+        class="ml-8"
+        (click)="logout()"
+        matTooltip="Logout"
+        matTooltipPosition="below"
+      >
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="flex justify-center items-center py-20">
+        <mat-spinner diameter="60"></mat-spinner>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (error()) {
+      <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg text-center mb-8">
+        <p class="font-medium">Error loading URLs</p>
+        <p class="text-sm mt-1">{{ error() }}</p>
+      </div>
+    }
+
+    <!-- URLs Table -->
+    @if (urls().length > 0) {
+      <mat-card class="shadow-xl overflow-hidden">
+        <mat-card-content class="p-0">
+          <div class="overflow-x-auto">
+            <table mat-table [dataSource]="urls()" class="w-full">
+
+              <!-- Index -->
+              <ng-container matColumnDef="index">
+                <th mat-header-cell *matHeaderCellDef class="w-16">#</th>
+                <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
+              </ng-container>
+
+              <!-- Title -->
+              <ng-container matColumnDef="title">
+                <th mat-header-cell *matHeaderCellDef>Title</th>
+                <td mat-cell *matCellDef="let element" class="font-medium">
+                  {{ element.title || '-' }}
+                </td>
+              </ng-container>
+
+              <!-- Original URL -->
+              <ng-container matColumnDef="originalUrl">
+                <th mat-header-cell *matHeaderCellDef>Original URL</th>
+                <td mat-cell *matCellDef="let element" class="max-w-md">
+                  <a [href]="element.original_url" target="_blank" rel="noopener noreferrer"
+                     class="text-blue-600 hover:underline truncate block">
+                    {{ element.original_url }}
+                  </a>
+                </td>
+              </ng-container>
+
+              <!-- Short URL -->
+              <ng-container matColumnDef="shortCode">
+                <th mat-header-cell *matHeaderCellDef>Short URL</th>
+                <td mat-cell *matCellDef="let element">
+                  <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                    {{ getShortUrl(element.short_code) }}
+                  </code>
+                </td>
+              </ng-container>
+
+              <!-- Expires -->
+              <ng-container matColumnDef="expiresAt">
+                <th mat-header-cell *matHeaderCellDef>Expires</th>
+                <td mat-cell *matCellDef="let element">
+                  @if (element.expires_at) {
+                    <span>{{ element.expires_at | date:'mediumDate' }}</span>
+                  } @else {
+                    <span class="text-green-600 font-medium">Never</span>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Clicks -->
+              <ng-container matColumnDef="clicks">
+                <th mat-header-cell *matHeaderCellDef class="text-center">Clicks</th>
+                <td mat-cell *matCellDef="let element" class="text-center">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    {{ element.click_count || 0 }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Actions -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="text-right pr-4">Actions</th>
+                <td mat-cell *matCellDef="let element" class="text-right space-x-1">
+                  <button mat-icon-button [cdkCopyToClipboard]="getShortUrl(element.short_code)"
+                          matTooltip="Copy short URL" (cdkCopyToClipboardCopied)="onCopied($event)">
+                    <mat-icon>link</mat-icon>
+                  </button>
+                  <button mat-icon-button [cdkCopyToClipboard]="element.original_url"
+                          matTooltip="Copy original URL">
+                    <mat-icon>content_copy</mat-icon>
+                  </button>
+                  <a [href]="getShortUrl(element.short_code)" target="_blank" rel="noopener noreferrer"
+                     mat-icon-button matTooltip="Open short link">
+                    <mat-icon>open_in_new</mat-icon>
+                  </a>
+                  <button mat-icon-button (click)="openEditDialog(element)" matTooltip="Edit URL">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="deleteUrl(element.short_code)"
+                          matTooltip="Delete URL" class="text-red-600 hover:text-red-800">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns"
+                  class="hover:bg-gray-50 transition"></tr>
+            </table>
+          </div>
+          <div class="text-center py-8 text-gray-500" *matNoDataRow>No URLs found</div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Empty State -->
+    @else if (!loading() && !error()) {
+      <mat-card class="text-center py-20 shadow-lg">
+        <mat-icon class="text-8xl text-gray-300 mb-6">link_off</mat-icon>
+        <h2 class="text-2xl font-semibold text-gray-700 mb-2">No URLs found</h2>
+        <p class="text-gray-500">Start by shortening your first URL!</p>
+        <button mat-raised-button color="primary" class="mt-6" (click)="openAddUrlDialog()">
+          <mat-icon>add</mat-icon>
+          Add Your First URL
+        </button>
+      </mat-card>
+    }
+  </div>
+</main>

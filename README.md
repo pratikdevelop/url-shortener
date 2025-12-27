@@ -1,76 +1,86 @@
+```markdown
 # URL Shortener Application
 
-This is a full-stack URL shortener application with a Go backend and a Next.js frontend.
+This is a full-stack URL shortener application with a **Go backend** and an **Angular frontend**.
 
 ## Features
 
-*   Shorten long URLs into concise, manageable links.
-*   Option to create custom short codes for personalized URLs.
-*   View a list of all shortened URLs.
-*   Edit the original long URL for existing shortened links.
-*   Delete shortened URLs.
-*   Track click counts for each shortened URL.
+- Shorten long URLs into concise, manageable links.
+- Option to create **custom aliases** (short codes) for personalized URLs.
+- User authentication (register & login with JWT).
+- View a personalized list of all your shortened URLs.
+- **Edit** title, original URL, or expiry date of existing links.
+- **Delete** shortened URLs.
+- **Click tracking** – see how many times each link was clicked.
+- Public statistics page for any short link (`/s/{code}`).
+- Protected analytics API for owners.
+- Rate limiting and CORS protection.
 
 ## Technologies Used
 
 ### Backend (Go)
 
-*   **GoLang**: Programming language.
-*   **Gin Gonic**: Web framework for building APIs.
-*   **MongoDB**: NoSQL database for storing URL data.
-*   **Go DotEnv**: For loading environment variables.*   **CORS**: Middleware for handling Cross-Origin Resource Sharing.
+- **Go** – Core programming language.
+- **net/http** – Standard library HTTP server (no external frameworks).
+- **MongoDB** (via official driver) – NoSQL database for storing users and URLs.
+- **JWT** (golang-jwt) – Authentication tokens.
+- **bcrypt** – Password hashing.
+- **tollbooth** – Rate limiting for DDoS/abuse protection.
+- **rs/cors** – CORS middleware.
+- **godotenv** – Environment variable loading.
 
-### Frontend (Next.js)
+### Frontend (Angular)
 
-*   **Next.js**: React framework for building user interfaces.
-*   **React**: JavaScript library for building UIs.
-*   **Tailwind CSS**: Utility-first CSS framework for styling.
-*   **Material UI**: React component library for faster and easier web development.
+- **Angular** (latest standalone components) – Modern TypeScript framework.
+- **Angular Material** – UI components (table, dialog, toolbar, etc.).
+- **RxJS & Signals** – Reactive state management.
+- **Clipboard CDK** – Copy-to-clipboard functionality.
+- **Tailwind CSS** (optional) or Angular Material styling.
+
+## Project Structure
+
+```
+url-shortener/
+├── main.go                  # Complete Go backend (single file)
+├── angular-app/             # Angular frontend project
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── url-lists.component.ts/html/css
+│   │   │   └── add-url-dialog.component.ts/html/css
+│   │   └── ...
+│   └── angular.json, package.json, etc.
+```
 
 ## Setup and Installation
-
-To set up the project, follow these steps:
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/pratikdevelop/go-next-app
-cd go-next-app
+git clone https://github.com/your-username/url-shortener
+cd url-shortener
 ```
 
-### 2. Backend Setup
+### 2. Backend Setup (Go)
 
-Navigate to the `api` directory:
-
-```bash
-cd api
-```
-
-Install Go dependencies:
+The backend is a single `main.go` file.
 
 ```bash
+# From project root
 go mod tidy
 ```
 
-Create a `.env` file in the `api` directory and add your MongoDB URI:
+Create a `.env` file in the root directory:
 
 ```
-MONGO_URI="your_mongodb_connection_string"
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/url-shortner?retryWrites=true&w=majority
 ```
 
-Replace `your_mongodb_connection_string` with your actual MongoDB connection string (e.g., from MongoDB Atlas).
+> Replace with your actual MongoDB Atlas connection string.
 
-### 3. Frontend Setup
-
-Navigate to the `my-app` directory:
+### 3. Frontend Setup (Angular)
 
 ```bash
-cd ../my-app
-```
-
-Install Node.js dependencies:
-
-```bash
+cd angular-app
 npm install
 ```
 
@@ -78,28 +88,57 @@ npm install
 
 ### 1. Run the Backend
 
-From the `api` directory, run the Go application with `air`:
-
 ```bash
-air
+go run main.go
 ```
 
-The backend server will start on `http://localhost:8081`.
+Server starts at **http://localhost:8080**
 
 ### 2. Run the Frontend
 
-From the `my-app` directory, run the Next.js development server:
-
 ```bash
-npm run dev
+cd angular-app
+ng serve
 ```
 
-The frontend application will be accessible at `http://localhost:3000`.
+Frontend available at **http://localhost:4200**
 
-## API Endpoints
+## API Endpoints (Base URL: http://localhost:8080)
 
-*   `POST /shorten`: Shorten a long URL. Accepts `long_url` and optional `short_code`.
-*   `GET /urls`: Get all shortened URLs.
-*   `PUT /urls/:id`: Update the long URL for a given shortened link.
-*   `DELETE /urls/:id`: Delete a shortened URL.
-*   `GET /:shortCode`: Redirect to the original long URL.
+### Authentication
+- `POST /api/register` – Register new user
+- `POST /api/login` – Login and receive JWT token
+
+### URL Management (Protected – requires Bearer token)
+- `POST /api/add-url` – Create new short URL  
+  Body: `{ "original_url": "...", "custom_alias": "optional", "title": "optional", "expires_at": "ISO string optional" }`
+- `GET /api/urls` – List all your URLs (with click_count)
+- `PUT /api/url/{shortCode}` – Update title, original_url, or expires_at
+- `DELETE /api/url/{shortCode}` – Delete a URL
+- `GET /api/stats/{shortCode}` – Get detailed stats for one of your links
+
+### Public Endpoints
+- `GET /{shortCode}` – Redirect to original URL (increments click count)
+- `GET /s/{shortCode}` – Public HTML statistics page (clicks, expiry, etc.)
+
+## Security & Protection
+
+- JWT-based authentication
+- Rate limiting on all endpoints
+- Unique constraints on email & short_code
+- Input validation
+- CORS restricted to frontend origin
+
+## Future Improvements (Optional)
+
+- QR code generation for short links
+- Password reset flow
+- User profile page
+- Admin dashboard
+- Deployment with Docker + Nginx + HTTPS
+
+---
+
+**Enjoy your own private, secure, and feature-rich URL shortener!**  
+Built with modern Go and Angular – fast, clean, and ready for production.
+```

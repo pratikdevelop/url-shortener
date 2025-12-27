@@ -9,7 +9,10 @@ require (
 	github.com/aofei/air v0.22.0 // indirect
 	github.com/aofei/mimesniffer v1.1.6 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
+	github.com/didip/tollbooth/v7 v7.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/go-pkgz/expirable-cache/v3 v3.0.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
@@ -17,6 +20,8 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pelletier/go-toml v1.9.0 // indirect
+	github.com/rs/cors v1.11.1 // indirect
+	github.com/shurcooL/httperror v0.0.0-20210906152555-9bb3cabb3d15 // indirect
 	github.com/tdewolff/minify/v2 v2.9.16 // indirect
 	github.com/tdewolff/parse/v2 v2.5.15 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.1 // indirect
@@ -33,6 +38,6 @@ require (
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/sampler v1.3.0 // indirect
 )

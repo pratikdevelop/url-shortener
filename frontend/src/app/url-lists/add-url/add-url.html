@@ -1,0 +1,58 @@
+<h2 mat-dialog-title>
+  {{ mode === 'edit' ? 'Edit URL' : 'Add New Short URL' }}
+</h2>
+  <mat-dialog-content class="min-w-[500px]">
+    <form class="space-y-5">
+
+      <!-- Title (optional) -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Title (optional)</mat-label>
+        <input matInput [field]="urlForm.title" placeholder="e.g., My YouTube Video">
+        <mat-hint>For easy recognition in your list</mat-hint>
+      </mat-form-field>
+
+      <!-- Custom Alias (optional) -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Custom Alias (optional)</mat-label>
+        <input matInput [field]="urlForm.customAlias" placeholder="e.g., youtube-2025">
+        <mat-hint>Leave blank for random code • Only letters, numbers, _, -</mat-hint>
+        @if (urlForm.customAlias().touched() && urlForm.customAlias().invalid()) {
+          <mat-error>Invalid custom alias</mat-error>
+        }
+        @if (customAliasTaken()) {
+          <mat-error>Custom alias already taken</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Original URL (required) -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Original URL</mat-label>
+        <input matInput [field]="urlForm.originalUrl" placeholder="https://example.com/very/long/url">
+        @if (urlForm.originalUrl().touched() && urlForm.originalUrl().invalid()) {
+          <mat-error>Valid URL is required</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Expiry Date (optional) -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Expires on (optional)</mat-label>
+        <input matInput [matDatepicker]="picker" [field]="urlForm.expiryDate">
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        <mat-hint>Leave empty = never expires</mat-hint>
+      </mat-form-field>
+
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="gap-3 mt-4">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button
+            color="primary"
+            (click)="submit()"
+            [disabled]="urlForm().invalid() || submitting">
+      @if (submitting) {
+        <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+      }
+  {{ mode === 'edit' ? 'Update URL' : 'Shorten URL' }}   </button>
+  </mat-dialog-actions>
