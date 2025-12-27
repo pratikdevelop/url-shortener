@@ -56,7 +56,7 @@ url-shortener/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/url-shortener
+git clone https://github.com/pratikdevelop/url-shortener
 cd url-shortener
 ```
 
